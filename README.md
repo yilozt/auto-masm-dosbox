@@ -15,7 +15,7 @@
 ```
 git clone https://www.github.com/PID000/auto-masm-dosbox
 cd auto-masm-dosbox
-./install
+chmox +x ./install && ./install
 ```
 
 masm、edit等工具在masm文件夹下，可以将这个文件夹复制出来，自己配置。

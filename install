@@ -33,6 +33,7 @@ cp $mydir/dosbox-conf $conf
 
 cp -r ${mydir}/masm ~/.auto-masm
 mkdir -p ~/.auto-masm/bin
+chmod +x ${mydir}/auto-masm
 cp ${mydir}/auto-masm ~/.auto-masm/bin
 
 if [ "`echo $SHELL|grep fish`" != ""  ]; then
