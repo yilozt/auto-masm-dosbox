@@ -1,0 +1,102 @@
+#!/bin/bash
+# dosbox 自动编译asm源文件、挂载目录
+
+function help() {
+        echo "使用方法: auto-masm [file.asm]"
+        echo "将生成 [file.exe] (限制：只能编译一个文件）"
+        echo ""
+        echo "或者 auto-masm [path/to/mount]"
+        echo "将在启动dos_box时挂载 [path/to/mount]"
+}
+
+# 清除在dosbox配置文件中添加的内容
+#
+function clean() {
+        if grep "# \[masm_auto_run\]" $dosbox_conf ; then
+                line=`grep -n "# \[masm_auto_run\]" $dosbox_conf \
+                        | head -n 1 | cut -d':' -f1`
+                sed -i "$line,$ d" $dosbox_conf
+        fi
+}
+
+# 将asm源文件所在的文件 或者 需要挂载的文件夹 路径转换
+# 成绝对路径
+# 
+# $1: asm源文件所在路径，或者需要挂载的文件夹
+#     如果$1为相对路径，可以用`pwd`/$1来获取绝对路径
+#
+function get_dir() {
+
+        # 如果 $1 为文本文件，从路径中删除文件名，只留
+        # 文件夹的名字
+        if [ -f "$1" ]; then
+                # 从 $1 字符串尾部起，删除字符，直到删除第一个'/'
+                # 如果直接传入文件名，那么文件夹路径就为`pwd`
+                tmp="$1"
+                exec_dir=${1%/*}
+                if [ "$tmp" = "$exec_dir" ]; then
+                        exec_dir=""
+                fi
+        else
+                exec_dir=$1
+        fi
+
+        # 如果 $1 的第一个字符为 '/'（绝对路径)
+        if [ "${exec_dir:0:1}" = '/' ]; then
+                echo $exec_dir
+        else
+                echo `pwd`/$exec_dir
+        fi
+}
+
+# 获取文件名，并删除后缀名
+# $1: asm 文件路径
+function get_name() {
+        # 从 $1 字符串头部开始，尽可能删除最多的'/'字符
+        name=${1##*/}
+        # 从 name 字符串尾部开始，删除字符，直到删除第一个'.'字符
+        name=${name%.*}
+        echo $name
+}
+
+dosbox_conf=$(ls ~/.dosbox/dosbox*conf)
+
+function main() {
+        clean
+
+        # 无论如何，挂载还是要挂载文件夹的
+        { cat <<EOF
+# [masm_auto_run]
+cls
+mount f: `get_dir $1`
+f:
+EOF
+} >> $dosbox_conf
+        
+        # 如果传入的是 asm 文件名
+        # 尝试自动编译链接
+        if [ -f "$1" ]; then
+                { cat <<EOF
+masm `get_name "$1"`.asm;
+link `get_name "$1"`.obj;
+`get_name "$1"`.exe
+# [end_auto_run]
+EOF
+} >> $dosbox_conf
+        fi
+
+        dosbox
+        clean 
+}
+
+if [ -f ~/.dosbox/dosbox*.conf ]; then
+        if test "$1" != "" && test -f "$1" || test -d "$1" ; then
+                main "$1"
+        else
+                help
+                exit 1
+        fi
+else
+        echo "找不到dosbox的配置文件，请确认dosbox配置文件是否存在"
+        exit 1
+fi

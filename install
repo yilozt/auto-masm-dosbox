@@ -1,0 +1,77 @@
+#!/bin/bash
+
+add_path_success=0
+
+mkdir -p ~/.auto-masm
+mydir=${0%/*}
+if [ ${mydir:0:1} != '/'  ]; then
+        mydir=`pwd`/$mydir
+fi
+
+bak_conf=`ls ~/.dosbox/dosbox*conf_auto_masm_bak 2>/dev/null`
+if [ "$bak_conf" != "" ]; then
+        echo "已完成安装"
+        echo "是否重新安装? [Y/N]"
+        read choice
+        if [ "$choice" = "Y" ]; then
+                :
+        else
+                exit 0
+        fi
+fi
+
+conf=`ls ~/.dosbox/dosbox*conf 2>/dev/null`
+if [ "$conf" = ""  ]; then
+        dosbox -printconf
+fi
+conf=`ls ~/.dosbox/dosbox*conf 2>/dev/null`
+if [ "$bak_conf" = "" ]; then
+        cp $conf ${conf}_auto_masm_bak
+fi
+cp $mydir/dosbox-conf $conf
+
+
+cp -r ${mydir}/masm ~/.auto-masm
+mkdir -p ~/.auto-masm/bin
+cp ${mydir}/auto-masm ~/.auto-masm/bin
+
+if [ "`echo $SHELL|grep fish`" != ""  ]; then
+        mkdir -p ~/.config/fish
+        touch ~/.config/fish/config.fish
+        chmod +x ~/.config/fish/config.fish
+        if [ "`grep auto-masm ~/.config/fish/config.fish`" = ""  ]; then
+                echo 'set -x PATH $PATH'" ~/.auto-masm/bin" >> ~/.config/fish/config.fish
+        fi
+elif [ "`echo $SHELL|grep bash`" != ""  ]; then
+        touch ~/.bashrc
+        if [ "`grep auto-masm ~/.bashrc`" = ""  ]; then
+                echo 'export PATH=$PATH:~/.auto-masm/bin' >> ~/.bashrc
+        fi
+elif [ "`echo $SHELL|grep zsh`" != ""  ]; then
+        touch ~/.zshrc
+        if [ "`grep auto-masm ~/.zshrc`" = ""  ]; then
+                echo 'export PATH=$PATH:~/.auto-masm/bin' >> ~/.zshrc
+        fi
+else
+        echo
+fi
+
+for i in bash zsh fish ; do
+        if echo $SHELL|grep -q  "$i" ; then
+                add_path_success=1
+        fi
+done
+
+echo '已完成安装，原dosbox配置文件位于'`ls ~/.dosbox/dosbox*masm*`
+echo '这个脚本以及masm位于位于'~/.auto-masm中
+echo ''
+if [ "$add_path_success" = 1  ]; then
+        echo '打开新终端后，可以直接输入auto-masm来使用。'
+else
+        echo '没有添加到环境变量，可以使用:'
+        echo '  ~/.auto-masm/bin/auto-masm'
+        echo '使用脚本，或是将这个路径添加到PATH中。'
+fi
+echo '------------------------------------------'
+~/.auto-masm/bin/auto-masm
+exit 0
