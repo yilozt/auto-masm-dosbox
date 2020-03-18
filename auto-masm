@@ -12,7 +12,7 @@ function help() {
 # 清除在dosbox配置文件中添加的内容
 #
 function clean() {
-        if grep "# \[masm_auto_run\]" $dosbox_conf ; then
+        if grep -q "# \[masm_auto_run\]" $dosbox_conf ; then
                 line=`grep -n "# \[masm_auto_run\]" $dosbox_conf \
                         | head -n 1 | cut -d':' -f1`
                 sed -i "$line,$ d" $dosbox_conf
@@ -99,7 +99,8 @@ EOF
 } >> $dosbox_conf
         fi
 
-        dosbox
+        dosbox 1>/dev/null 2>&1 &
+        sleep 1
         clean 
 }
 

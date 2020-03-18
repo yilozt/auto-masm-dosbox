@@ -31,12 +31,14 @@ masm、edit等工具在masm文件夹下，可以将这个文件夹复制出来�
 ```
 auto-masm [path/to/asm/file]
 ```
+![](imgs/auto-masm-file.png)
 
 将一个目录挂载到dosbox：
 
 ```
 auto-masm /path/to/dir
 ```
+![](imgs/mount-a-path.png)
 
 # 删除
 
