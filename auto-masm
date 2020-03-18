@@ -53,10 +53,24 @@ function get_dir() {
 # $1: asm 文件路径
 function get_name() {
         # 从 $1 字符串头部开始，尽可能删除最多的'/'字符
-        name=${1##*/}
+        name_full=${1##*/}
         # 从 name 字符串尾部开始，删除字符，直到删除第一个'.'字符
-        name=${name%.*}
-        echo $name
+        name=${name_full%.*}
+
+        # 因为Dos文件名最多为8个字符，需要对文件名进行截断，并将
+        # 原来的文件复制一份，顺手加上asm后缀。
+        name_cut=${name:0:8}
+        dir=`get_dir $1`
+
+        # dos对文件名的处理很迷，需要将文件名中的.字符替换掉，
+        # 以免出现问题
+        name_cut=$(echo "$name_cut"|sed 's/\./~/g')
+        if [ "$name_cut" != "$name" ]; then
+                cp $dir/$name_full $dir/$name_cut".asm" 1>/dev/null 2>&1
+                echo $name_cut
+        else
+                echo $name
+        fi
 }
 
 dosbox_conf=$(ls ~/.dosbox/dosbox*conf)
