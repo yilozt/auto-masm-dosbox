@@ -1,6 +1,8 @@
 #!/bin/bash
 # dosbox 自动编译asm源文件、挂载目录
 
+tmp_file="/tmp/auto_masm_"`date +%HH_%MM_%SS`
+
 function help() {
         echo "使用方法: auto-masm [file.asm]"
         echo "将生成 [file.exe] (限制：只能编译一个文件）"
@@ -67,8 +69,10 @@ function get_name() {
         name_cut=$(echo "$name_cut"|sed 's/\./~/g')
         if [ "$name_cut" != "$name" ]; then
                 cp $dir/$name_full $dir/$name_cut".asm" 1>/dev/null 2>&1
+                echo $dir/$name_cut".asm" > $tmp_file
                 echo $name_cut
         else
+                echo "" > $tmp_file
                 echo $name
         fi
 }
@@ -100,7 +104,14 @@ EOF
         fi
 
         dosbox 1>/dev/null 2>&1 &
-        sleep 1
+        sleep 2
+
+        clean_file=`cat $tmp_file`
+        if [ "$clean_file" != "" ]; then
+                rm $clean_file
+        fi
+        rm $tmp_file
+
         clean 
 }
 
