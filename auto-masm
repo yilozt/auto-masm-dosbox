@@ -34,20 +34,19 @@ function get_dir() {
         if [ -f "$1" ]; then
                 # 从 $1 字符串尾部起，删除字符，直到删除第一个'/'
                 # 如果直接传入文件名，那么文件夹路径就为`pwd`
-                tmp="$1"
-                exec_dir=${1%/*}
-                if [ "$tmp" = "$exec_dir" ]; then
+                exec_dir="${1%/*}"
+                if [ "$1" = "$exec_dir" ]; then
                         exec_dir=""
                 fi
         else
-                exec_dir=$1
+                exec_dir="$1"
         fi
 
         # 如果 $1 的第一个字符为 '/'（绝对路径)
         if [ "${exec_dir:0:1}" = '/' ]; then
-                echo $exec_dir
+                echo "$exec_dir"
         else
-                echo `pwd`/$exec_dir
+                echo `pwd`/"$exec_dir"
         fi
 }
 
@@ -55,34 +54,34 @@ function get_dir() {
 # $1: asm 文件路径
 function get_name() {
         # 从 $1 字符串头部开始，尽可能删除最多的'/'字符
-        name_full=${1##*/}
+        name_full="${1##*/}"
         
         # 自己的奇葩需求，有的时候懒得打后缀名，
         # 如果不是以asm为后缀名，直接传整个文件名过去，
         # 反正之后会进行截断和替换处理
 
-        if echo $name_full | grep '\.[aA][sS][mM]$' ; then
+        if echo "$name_full" | grep -q '\.[aA][sS][mM]$' ; then
                 # 从 name 字符串尾部开始，删除字符，直到删除第一个'.'字符
-                name=${name_full%.*}
+                name="${name_full%.*}"
         else
-                name=${name_full}
+                name="${name_full}"
         fi
 
         # 因为Dos文件名最多为8个字符，需要对文件名进行截断，并将
         # 原来的文件复制一份，顺手加上asm后缀。
-        name_cut=${name:0:8}
-        dir=`get_dir $1`
+        name_cut="${name:0:8}"
+        dir=`get_dir "$1"`
 
         # dos对文件名的处理很迷，需要将文件名中的.字符替换掉，
         # 以免出现问题
-        name_cut=$(echo "$name_cut"|sed 's/\./~/g')
+        name_cut=$(echo "$name_cut"|sed 's/[\.\ ]/~/g')
         if [ "$name_cut" != "$name" ] || [ "$name" = "$name_full" ]; then
-                cp $dir/$name_full $dir/$name_cut".asm" 1>/dev/null 2>&1
-                echo $dir/$name_cut".asm" > $tmp_file
-                echo $name_cut
+                cp "$dir/$name_full" "$dir/$name_cut"".asm"
+                echo "$dir/$name_cut"".asm" > $tmp_file
+                echo "$name_cut"
         else
                 echo "" > $tmp_file
-                echo $name
+                echo "$name"
         fi
 }
 
@@ -95,7 +94,7 @@ function main() {
         { cat <<EOF
 # [masm_auto_run]
 cls
-mount f: `get_dir $1`
+mount f: `get_dir "$1"`
 f:
 EOF
 } >> $dosbox_conf
@@ -103,10 +102,12 @@ EOF
         # 如果传入的是 asm 文件名
         # 尝试自动编译链接
         if [ -f "$1" ]; then
+                file_name=`get_name "$1"`
+                echo "===> $file_name"
                 { cat <<EOF
-masm `get_name "$1"`.asm;
-link `get_name "$1"`.obj;
-`get_name "$1"`.exe
+masm $file_name.asm;
+link $file_name.obj;
+$file_name.exe
 # [end_auto_run]
 EOF
 } >> $dosbox_conf
