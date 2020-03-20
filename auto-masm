@@ -56,8 +56,17 @@ function get_dir() {
 function get_name() {
         # 从 $1 字符串头部开始，尽可能删除最多的'/'字符
         name_full=${1##*/}
-        # 从 name 字符串尾部开始，删除字符，直到删除第一个'.'字符
-        name=${name_full%.*}
+        
+        # 自己的奇葩需求，有的时候懒得打后缀名，
+        # 如果不是以asm为后缀名，直接传整个文件名过去，
+        # 反正之后会进行截断和替换处理
+
+        if echo $name_full | grep '\.[aA][sS][mM]$' ; then
+                # 从 name 字符串尾部开始，删除字符，直到删除第一个'.'字符
+                name=${name_full%.*}
+        else
+                name=${name_full}
+        fi
 
         # 因为Dos文件名最多为8个字符，需要对文件名进行截断，并将
         # 原来的文件复制一份，顺手加上asm后缀。
@@ -67,7 +76,7 @@ function get_name() {
         # dos对文件名的处理很迷，需要将文件名中的.字符替换掉，
         # 以免出现问题
         name_cut=$(echo "$name_cut"|sed 's/\./~/g')
-        if [ "$name_cut" != "$name" ]; then
+        if [ "$name_cut" != "$name" ] || [ "$name" = "$name_full" ]; then
                 cp $dir/$name_full $dir/$name_cut".asm" 1>/dev/null 2>&1
                 echo $dir/$name_cut".asm" > $tmp_file
                 echo $name_cut
